@@ -1,0 +1,376 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <!--link rel="icon" href="../../../../favicon.ico"-->
+
+    <title>Showcase.Social | Pull Your Social Posts Together</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Custom styles for this template -->
+    <link href="/css/style.css" rel="stylesheet">
+  </head>
+
+  <body>
+
+    <header>
+      <div class="logo">
+
+      </div>
+      <ul class="mainMenu">
+        <a href="#" class="active"><li>Home</li></a>
+        <a href="javascript:toggleEdit()"><li>Edit Layout</li></a>
+      </ul>
+      <div class="addURLCont">
+        <form id="addURL" class="" action="/api/" method="post">
+          <input onClick="this.select();" type="text" name="" value="" placeholder="https://www.instagram.com/p/BV85ZUWhCUD/">
+          <button type="submit" name="button">GO</button>
+        </form>
+      </div>
+    </header>
+
+
+
+
+    <div id="gridCont" class="grid">
+
+      <!-- new items get added in here -->
+
+
+
+
+      <!-- post-load / infinity scroll items get added in here -->
+    </div>
+
+
+    <!--main role="main" class="container">
+
+      <div class="starter-template">
+        <h1>Bootstrap starter template</h1>
+        <p class="lead">Use this document as a way to quickly start any new project.<br> All you get is this text and a mostly barebones HTML document.</p>
+      </div>
+
+    </main--><!-- /.container -->
+
+
+
+    <!--footer>
+      Some summary info - not much, hoping for infinity scroll
+    </footer-->
+
+
+
+
+    <!-- Bootstrap core JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="/js/jquery-3.2.1.min.js" ></script>
+    <script src="/js/masonry.pkgd.min.js"></script>
+
+
+    <script src="/js/packery.pkgd.min.js"></script>
+    <script src="/js/draggabilly.pkgd.min.js"></script>
+
+    <!-- Google Plus Stuff
+      <script src="https://apis.google.com/js/platform.js" async defer></script>
+
+      <div id="widget-div"></div>
+      <script>
+
+       //function renderWidget() {
+      //   gapi.post.render("widget-div", {'href' : 'https://plus.google.com/109813896768294978296/posts/hdbPtrsqMXQ'} );
+       //}
+     </script>
+    -->
+    <script type="text/javascript">
+
+    var curColWidth = 400;
+
+    function manageUI(){
+
+      var cols = 4;
+      if($("body").width()>1600){
+        cols = 4;
+      }else if($("body").width()>1000){
+        cols = 3;
+      }else if($("body").width()>600){
+        cols = 2;
+      }else{
+        cols = 1;
+      }
+      var theW = ($("body").width() - ($("body").width() / 50)) / cols;
+      curColWidth = theW;
+      $("iframe").css("width", theW);
+      $("twitterwidget").css("width", theW);
+      $(".grid-item").css("width", (theW + (theW/50)));
+
+      $('.grid').masonry();
+    }
+    var UIManager = window.setInterval(manageUI, 1000);
+
+
+
+      function applyGridlayout(){
+        $('#gridCont').masonry({
+          // options
+          itemSelector: '.grid-item'
+        });
+
+        $(window).ready(function(){
+          $('#gridCont').masonry();
+        });
+
+        //for good measure,
+
+
+
+      }
+
+      function convertToGridItem(htmlInc){
+
+        if(htmlInc.match("facebook.com")){
+          //need to fix up BS facebook stuff
+          console.log(htmlInc);
+
+        }
+
+        var html = "<div class='grid-item'>";
+            html += "   "+htmlInc;
+            html += "</div>";
+
+          return html;
+      }
+
+      function loadContent(){
+        // parse the content to display
+
+        $.getJSON( "api/embed", function( data ) {
+          console.log(data);
+          var htmlBlocks = "";
+          var items = [];
+          $.each( data, function( index, elem ) {
+            //console.log(elem.body);
+            //<div class="grid-item instagram">
+
+
+
+            htmlBlocks += convertToGridItem(elem.body);
+
+            //items.push( "<div id='"+_id+"' class='grid-item'>" + body + "</div>" );
+          });
+
+          $("#gridCont").html(htmlBlocks);
+
+          applyGridlayout();
+
+        });
+
+      } //end load content function
+
+      function addURL(){
+
+      }
+
+      var el;
+      function convertInputToEmbed(){
+        console.log("coverting input URL to embed coded");
+        //make sure the input has a value...
+        var input = $("#addURL input").val();
+
+        if(input.match("instagram.com")){
+          //we've got to do an instagram lookup...
+          var instaAPI = "https://api.instagram.com/oembed?url="+input;
+
+          $.ajax({
+                url: instaAPI,
+                dataType: 'jsonp',
+                success: function(resp){
+                    console.log(resp.html);
+                    //var obj = {};
+                    //obj.body = resp.html;
+                    //obj.body
+                    var htmlToAdd = convertToGridItem(resp.html);
+
+
+                    var embedObj = {title: input, body: resp.html};
+                    storeEmbed(embedObj);
+
+                    var el = jQuery(htmlToAdd);
+                    jQuery("#gridCont").prepend(el).masonry( 'prepended', el, true );
+                    instgrm.Embeds.process();
+
+                }
+            });
+        }else if(input.match("youtube.com")){
+          //we've got a simple YouTube embed
+          //input = "https://www.youtube.com/watch?v=UGQaHjzeml4";
+          var youtubeID = input.split("v=")[1];
+          var embedHTML = '<iframe width="600" height="337" src="https://www.youtube.com/embed/'+youtubeID+'" frameborder="0" allowfullscreen></iframe>';
+
+          var embedObj = {title: input, body: embedHTML};
+          storeEmbed(embedObj);
+
+          var htmlToAdd = convertToGridItem(embedHTML);
+          var el = jQuery(htmlToAdd);
+          jQuery("#gridCont").prepend(el).masonry( 'prepended', el, true );
+          //instgrm.Embeds.process();
+
+
+
+        }else if(input.match("facebook.com")){
+          //original code
+          //<iframe src="https://web.facebook.com/plugins/post.php?href=https%3A%2F%2Fweb.facebook.com%2Fregularsteven%2Fposts%2F1729378244038142&width=500" width="500" height="520" style="border:none;overflow:hidden" scrolling="no" frameborder="0" allowTransparency="true"></iframe>
+
+          //original url
+          //https%3A%2F%2Fweb.facebook.com%2Fregularsteven%2Fposts%2F1729378244038142
+          //https://web.facebook.com/regularsteven/posts/1729378244038142
+
+          var inputURL = encodeURIComponent(input);//"https%3A%2F%2Fwww.facebook.com%2Fmedia%2Fset%2F%3Fset%3Da.1724530054522961.1073741833.1387665564876080";
+          var embedHTML = '<iframe src="https://www.facebook.com/plugins/post.php?href='+inputURL+'%26type%3D3&width=600" width="600" height="400" style="border:none;overflow:hidden" scrolling="no" frameborder="0" allowTransparency="true"></iframe>';
+
+          var embedObj = {title: input, body: embedHTML};
+          storeEmbed(embedObj);
+
+          var htmlToAdd = convertToGridItem(embedHTML);
+          var el = jQuery(htmlToAdd);
+          jQuery("#gridCont").prepend(el).masonry( 'prepended', el, true );
+
+        } else if(input.match("twitter.com")){
+
+          var twitterAPI = "https://publish.twitter.com/oembed?url="+encodeURIComponent(input);
+
+          $.ajax({
+                url: twitterAPI,
+                dataType: 'jsonp',
+                success: function(resp){
+                    console.log(resp);
+
+                    var htmlToAdd = convertToGridItem(resp.html);
+
+
+                    var embedObj = {title: input, body: resp.html};
+                    storeEmbed(embedObj);
+
+                    var el = jQuery(htmlToAdd);
+                    jQuery("#gridCont").prepend(el).masonry( 'prepended', el, true );
+
+
+                }
+            });
+
+        }else if(input.match("soundcloud.com")){
+          var embedHTML = '<iframe width="100%" height="166" scrolling="no" frameborder="no" src="https://w.soundcloud.com/player/?url='+input+ '"></iframe>';
+
+          var embedObj = {title: input, body: embedHTML};
+          storeEmbed(embedObj);
+
+          var htmlToAdd = convertToGridItem(embedHTML);
+          var el = jQuery(htmlToAdd);
+          jQuery("#gridCont").prepend(el).masonry( 'prepended', el, true );
+
+        }else if(input.match("pinterest.co")){
+          console.log("pinterest.co inclusion");
+          //https://www.pinterest.com.au/pin/107312403591396155/
+
+
+          var embedHTML = '<a data-pin-do="embedPin" data-pin-width="large" data-pin-terse="true" href="'+input+'"></a>';
+
+          var embedObj = {title: input, body: embedHTML};
+
+          console.log(input);
+          storeEmbed(embedObj);
+
+
+          var htmlToAdd = convertToGridItem(embedHTML);
+          var el = jQuery(htmlToAdd);
+          jQuery("#gridCont").prepend(el).masonry( 'prepended', el, true );
+
+          doBuild();
+
+        }
+
+      }
+
+      function storeEmbed(embedObj){
+        $.ajax({
+          url : "/api/embed",
+          type: "POST",
+          data: JSON.stringify(embedObj),
+          contentType: "application/json; charset=utf-8",
+          dataType   : "json",
+          success    : function(){
+              console.log("Should be stored in the DB now");
+          }
+        });
+      }
+
+
+
+
+
+      function bindEvents(){
+
+        $( "#addURL" ).submit(function( event ) {
+
+          event.preventDefault();
+          convertInputToEmbed()
+        });
+
+      }
+
+
+      $(document).ready(function(){
+        //console.log("override things");
+        bindEvents();
+        loadContent();
+
+      });
+
+
+      function toggleEdit(){
+        $("#gridCont").addClass("editLayout");
+
+
+
+        clearInterval(UIManager);
+
+
+        // initialize Packery
+        var $grid = $('#gridCont').packery({
+          itemSelector: '.grid-item',
+          // columnWidth helps with drop positioning
+          /*columnWidth: 100*/
+        });
+
+        // make all grid-items draggable
+        $grid.find('.grid-item').each( function( i, gridItem ) {
+          var draggie = new Draggabilly( gridItem );
+          // bind drag events to Packery
+          $grid.packery( 'bindDraggabillyEvents', draggie );
+        });
+
+
+
+
+      }
+
+
+
+
+
+    </script>
+
+
+
+    <!--script async defer src="//assets.pinterest.com/js/pinit.js"></script-->
+    <script src="//assets.pinterest.com/js/pinit.js" type="text/javascript" data-pin-build="doBuild"></script>
+
+
+  </body>
+</html>
